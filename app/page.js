@@ -4,12 +4,12 @@ import Image from "next/image";
 import { auth } from "../firebase";
 import { applyActionCode } from "firebase/auth";
 
-export default function EmailVerifiedPage() {
+export default function HomePage() {
   const [verified, setVerified] = useState(false);
   const [deepLinkReady, setDeepLinkReady] = useState(false);
 
   useEffect(() => {
-    // Prevent hydration errors by ensuring we're on the client
+    // Ensure we’re on the client to avoid hydration issues
     setDeepLinkReady(true);
   }, []);
 
@@ -27,10 +27,10 @@ export default function EmailVerifiedPage() {
         setVerified(true);
         console.log("✅ Email verified");
 
-        // 👇 Trigger deep link
+        // Redirect to app
         window.location.href = "thisway://emailVerified";
       } catch (error) {
-        console.error("❌ Verification error:", err.message);
+        console.error("❌ Verification error:", error.message);
       }
     };
 

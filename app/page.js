@@ -1,41 +1,69 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { auth } from "../firebase";
 import { applyActionCode } from "firebase/auth";
 
 export default function EmailVerifiedPage() {
+  const [verified, setVerified] = useState(false);
+  const [deepLinkReady, setDeepLinkReady] = useState(false);
+
   useEffect(() => {
-    const confirmEmail = async () => {
+    // Prevent hydration errors by ensuring we're on the client
+    setDeepLinkReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!deepLinkReady) return;
+
+    const verify = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const oobCode = urlParams.get("oobCode");
 
-      if (oobCode) {
-        try {
-          await applyActionCode(auth, oobCode);
-          console.log("✅ Email verified!");
-          window.location.href = "thisway://emailVerified";
-        } catch (err) {
-          console.error("❌ Email verification failed:", err.message);
-        }
+      if (!oobCode) return;
+
+      try {
+        await applyActionCode(auth, oobCode);
+        setVerified(true);
+        console.log("✅ Email verified");
+
+        // 👇 Trigger deep link
+        window.location.href = "thisway://emailVerified";
+      } catch (error) {
+        console.error("❌ Verification error:", err.message);
       }
     };
 
-    confirmEmail();
-  }, []);
+    verify();
+  }, [deepLinkReady]);
+
+  if (!deepLinkReady) return null;
+
+  const handleOpenApp = () => {
+    window.location.href = "thisway://emailVerified";
+  };
 
   return (
-    <div className="w-screen h-screen flex items-center justify-center bg-black">
-      <div className="flex items-center justify-center">
-        <Image
-          className=""
-          src="/adaptive-icon.png"
-          alt="ThisWay logo"
-          width={180}
-          height={180}
-          priority
-        />
-      </div>
+    <div className="w-screen h-screen bg-black flex flex-col justify-center items-center gap-8 text-white">
+      <Image
+        src="/adaptive-icon.png"
+        alt="ThisWay logo"
+        width={120}
+        height={120}
+      />
+      {verified ? (
+        <>
+          <p>Email verified! 🎉</p>
+          <button
+            onClick={handleOpenApp}
+            className="px-4 py-2 bg-cyan-500 rounded-md text-white font-bold"
+          >
+            Tap here to continue in the app
+          </button>
+        </>
+      ) : (
+        <p>Verifying your email...</p>
+      )}
     </div>
   );
 }
